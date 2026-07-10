@@ -54,7 +54,7 @@
             </div>
             <button @click="searchCity" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="search"></i>{{ loading ? t('searching') : t('explore') }}</button>
             <div v-if="suggestions.length" class="suggestions">
-              <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
+              <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.feature_code === 'ADM1' ? '行政区 · ' : '' }}{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
             </div>
           </div>
           <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
@@ -67,7 +67,7 @@
         <div v-else-if="weatherError && !weather" class="weather-state error-state"><i data-lucide="cloud-off"></i><h2>{{ weatherError }}</h2><p>{{ selectedCity ? selectedCity.name + ' · ' + selectedCity.country : '' }}</p><button @click="selectedCity ? selectCity(selectedCity) : quickSearch(quickCities[1])">{{ t('retry') }}</button></div>
         <template v-else-if="weather">
         <div class="section-head">
-          <div><span class="kicker">{{ t('liveWeather') }}</span><h2>{{ selectedCity.name }}，{{ t('ready') }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }} · {{ weather.timezone }} · {{ selectedCity.latitude.toFixed(2) }}, {{ selectedCity.longitude.toFixed(2) }}</p></div>
+          <div><span class="kicker">{{ t('liveWeather') }}</span><h2>{{ selectedCity.name }}，{{ t('ready') }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }}<template v-if="selectedCity.regionLabel"> · {{ selectedCity.regionLabel }}</template> · {{ weather.timezone }} · {{ selectedCity.latitude.toFixed(2) }}, {{ selectedCity.longitude.toFixed(2) }}</p></div>
           <button class="save-button" :class="{saved: isSaved}" @click="toggleSave"><i :data-lucide="isSaved ? 'heart' : 'heart'"></i>{{ isSaved ? t('saved') : t('save') }}</button>
         </div>
         <div class="weather-grid">
@@ -118,6 +118,6 @@
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=smart-plan-2"></script>
+  <script src="app.js?v=region-match-1"></script>
 </body>
 </html>
