@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="weather-fix.css?v=2">
 </head>
 <body>
   <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
@@ -56,14 +57,17 @@
               <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
             </div>
           </div>
-          <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" @click="quickSearch(city)">{{ city }}</button></div>
+          <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
         </div>
         <div class="scroll-hint"><span>{{ t('scroll') }}</span><i data-lucide="arrow-down"></i></div>
       </section>
 
-      <section v-if="weather" id="discover" class="weather-section reveal">
+      <section id="discover" class="weather-section reveal">
+        <div v-if="loading && !weather" class="weather-state"><span class="spinner dark-spinner"></span><h2>{{ t('searching') }}</h2><p>{{ selectedCity ? selectedCity.name + ' · ' + selectedCity.country : '' }}</p></div>
+        <div v-else-if="weatherError && !weather" class="weather-state error-state"><i data-lucide="cloud-off"></i><h2>{{ weatherError }}</h2><p>{{ selectedCity ? selectedCity.name + ' · ' + selectedCity.country : '' }}</p><button @click="selectedCity ? selectCity(selectedCity) : quickSearch(quickCities[1])">{{ t('retry') }}</button></div>
+        <template v-else-if="weather">
         <div class="section-head">
-          <div><span class="kicker">{{ t('liveWeather') }}</span><h2>{{ selectedCity.name }}，{{ t('ready') }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }} · {{ weather.timezone }}</p></div>
+          <div><span class="kicker">{{ t('liveWeather') }}</span><h2>{{ selectedCity.name }}，{{ t('ready') }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }} · {{ weather.timezone }} · {{ selectedCity.latitude.toFixed(2) }}, {{ selectedCity.longitude.toFixed(2) }}</p></div>
           <button class="save-button" :class="{saved: isSaved}" @click="toggleSave"><i :data-lucide="isSaved ? 'heart' : 'heart'"></i>{{ isSaved ? t('saved') : t('save') }}</button>
         </div>
         <div class="weather-grid">
@@ -76,10 +80,12 @@
               <span><i data-lucide="wind"></i><b>{{ Math.round(weather.current.wind_speed_10m) }} km/h</b>{{ t('wind') }}</span>
               <span><i data-lucide="umbrella"></i><b>{{ weather.daily.precipitation_probability_max[0] }}%</b>{{ t('rain') }}</span>
             </div>
+            <div class="weather-source"><span>{{ t('forecastNote') }} · {{ t('dataTime') }} {{ formatTime(weather.current.time) }}</span><a :href="weather.source_url" target="_blank" rel="noopener">{{ t('rawData') }} ↗</a></div>
           </article>
           <article class="smart-tip"><span><i data-lucide="wand-sparkles"></i>{{ t('smartAdvice') }}</span><h3>{{ smartAdvice.title }}</h3><p>{{ smartAdvice.text }}</p><div class="packing"><b>{{ t('pack') }}</b><span v-for="item in smartAdvice.items">{{ item }}</span></div></article>
         </div>
         <div class="forecast"><article v-for="(day,i) in weather.daily.time.slice(1)" :key="day"><span>{{ dayName(day) }}</span><b class="forecast-icon">{{ weatherIcon(weather.daily.weather_code[i+1]) }}</b><strong>{{ Math.round(weather.daily.temperature_2m_max[i+1]) }}°</strong><small>{{ Math.round(weather.daily.temperature_2m_min[i+1]) }}°</small><em><i data-lucide="droplets"></i>{{ weather.daily.precipitation_probability_max[i+1] }}%</em></article></div>
+        </template>
       </section>
 
       <section id="planner" class="planner-section">
@@ -109,6 +115,6 @@
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=2108880"></script>
+  <script src="app.js?v=weather-global-2"></script>
 </body>
 </html>
