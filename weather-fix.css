@@ -89,3 +89,45 @@ i[data-lucide="cloud-off"]::before { content: '☁'; }
 .agency-timeline .timeline-actions { justify-content: flex-end; }
 .agency-timeline .timeline-actions a { border: 1px solid var(--line); background: var(--paper); }
 @media (max-width:700px) { .day-route-summary { align-items:flex-start; flex-direction:column; } .agency-timeline .timeline-item { grid-template-columns:60px 34px minmax(0,1fr) 32px; } }
+
+.auth-modal { width: 440px; padding-top: 34px; }
+.auth-modal .login-icon.success { background: color-mix(in srgb,#38a169 18%,var(--paper)); color: #23824b; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 20px 0 18px; padding: 4px; border-radius: 11px; background: var(--cream); }
+.auth-tabs button { border: 0; border-radius: 8px; padding: 9px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+.auth-tabs button.active { background: var(--paper); color: var(--green); box-shadow: 0 4px 12px rgba(18,49,37,.08); }
+.auth-modal h2 { margin-top: 16px; }
+.auth-modal > p { line-height: 1.55; }
+.password-field { position: relative; display: flex; }
+.password-field input { width: 100%; padding-right: 45px; }
+.password-field button { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 35px; height: 35px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+.password-field button:hover { background: var(--paper); color: var(--green); }
+.password-strength { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.password-strength > span { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; flex: 1; }
+.password-strength i { height: 4px; border-radius: 4px; background: var(--line); }
+.password-strength[data-score="1"] i.active { background: #d85656; }
+.password-strength[data-score="2"] i.active,.password-strength[data-score="3"] i.active { background: #d89a51; }
+.password-strength[data-score="4"] i.active { background: #2f9b61; }
+.password-strength small { color: var(--muted); font-size: 10px; }
+.forgot-password { float: right; margin-top: 10px; border: 0; background: transparent; color: var(--green); font-size: 11px; font-weight: 700; }
+.auth-modal .auth-alert { clear: both; display: flex; align-items: flex-start; gap: 7px; margin: 18px 0 -10px; padding: 10px 12px; border-radius: 9px; font-size: 11px; line-height: 1.45; }
+.auth-alert.error { background: color-mix(in srgb,#d85656 12%,var(--paper)); color: #a63f3f; }
+.auth-alert.success { background: color-mix(in srgb,#2f9b61 12%,var(--paper)); color: #237446; }
+.auth-alert svg { flex: 0 0 auto; margin-top: 1px; }
+.auth-modal .submit { min-height: 45px; align-items: center; }
+.auth-modal .submit:disabled { opacity: .58; }
+.auth-back { width: 100%; margin-top: 10px; border: 0; background: transparent; color: var(--muted); padding: 7px; font-size: 11px; }
+.auth-modal > small { display: flex; justify-content: center; align-items: flex-start; gap: 6px; line-height: 1.45; }
+.auth-modal > small svg { flex: 0 0 auto; margin-top: 1px; }
+.auth-email-hint { display: flex; gap: 11px; margin-top: 20px; padding: 14px; border-radius: 11px; background: var(--cream); color: var(--muted); font-size: 12px; line-height: 1.55; }
+.auth-email-hint svg { flex: 0 0 auto; color: var(--green); }
+.profile-menu { min-width: 215px; }
+.profile-menu strong { font-size: 13px; }
+.verified-badge { display: flex; align-items: center; gap: 5px; margin: 5px 0 12px; color: #2f8a58; font-size: 10px; }
+.verified-badge svg { width: 14px; height: 14px; }
+.profile-menu button:disabled { opacity: .5; }
+i[data-lucide="shield-check"]::before,i[data-lucide="badge-check"]::before,i[data-lucide="circle-check"]::before { content: '✓'; }
+i[data-lucide="mail"]::before,i[data-lucide="mail-check"]::before { content: '✉'; }
+i[data-lucide="key-round"]::before,i[data-lucide="lock-keyhole"]::before { content: '◆'; }
+i[data-lucide="eye"]::before { content: '◉'; }
+i[data-lucide="eye-off"]::before { content: '⊘'; }
+i[data-lucide="circle-alert"]::before { content: '!'; font-weight: 900; }

@@ -29,10 +29,10 @@
       <div class="nav-actions">
         <button class="icon-button" @click="darkMode=!darkMode" :aria-label="t('theme')"><i :data-lucide="darkMode ? 'sun' : 'moon'"></i></button>
         <button class="language" @click="toggleLang">{{ lang === 'zh' ? 'EN' : '中' }}</button>
-        <button v-if="!user" class="login-button" @click="showLogin=true">{{ t('login') }}</button>
+        <button v-if="!user" class="login-button" @click="setAuthMode('login');showLogin=true">{{ t('login') }}</button>
         <button v-else class="profile" @click="showProfile=!showProfile"><span>{{ user.name[0] }}</span>{{ user.name }}</button>
       </div>
-      <div v-if="showProfile" class="profile-menu"><p>{{ user.email }}</p><button @click="logout">{{ t('logout') }}</button></div>
+      <div v-if="showProfile" class="profile-menu"><strong>{{ user.name }}</strong><p>{{ user.email }}</p><small class="verified-badge"><i data-lucide="badge-check"></i>{{ lang==='zh'?'真实账号 · 已认证':'Verified account' }}</small><button @click="logout" :disabled="authLoading">{{ t('logout') }}</button></div>
     </header>
 
     <main>
@@ -120,13 +120,51 @@
 
     <footer><div class="brand"><span class="brand-mark"><i data-lucide="compass"></i></span><span><b>{{ t('brand') }}</b><small>YIDAN TRAVEL</small></span></div><p>{{ t('footer') }}</p><span>© 2026 Yidan Travel</span></footer>
 
-    <transition name="modal"><div v-if="showLogin" class="modal-backdrop" @click.self="showLogin=false"><form class="login-modal" @submit.prevent="login"><button type="button" class="modal-close" @click="showLogin=false"><i data-lucide="x"></i></button><span class="login-icon"><i data-lucide="map"></i></span><h2>{{ t('welcome') }}</h2><p>{{ t('loginSub') }}</p><label>{{ t('name') }}<input v-model="loginForm.name" required :placeholder="t('namePh')"></label><label>{{ t('email') }}<input v-model="loginForm.email" type="email" required placeholder="traveler@example.com"></label><button class="submit" type="submit">{{ t('startJourney') }}<i data-lucide="arrow-right"></i></button><small>{{ t('privacy') }}</small></form></div></transition>
+    <transition name="modal">
+      <div v-if="showLogin" class="modal-backdrop" @click.self="showLogin=false">
+        <form class="login-modal auth-modal" @submit.prevent="submitAuth">
+          <button type="button" class="modal-close" @click="showLogin=false"><i data-lucide="x"></i></button>
+          <span class="login-icon" :class="{success:authMode==='verify'}"><i :data-lucide="authMode==='verify' ? 'mail-check' : authMode==='update' ? 'key-round' : 'shield-check'"></i></span>
+          <template v-if="authMode==='verify'">
+            <h2>{{ lang==='zh' ? '检查你的邮箱' : 'Check your email' }}</h2>
+            <p>{{ authMessage }}</p>
+            <div class="auth-email-hint"><i data-lucide="mail"></i><span>{{ lang==='zh' ? '点击邮件中的安全链接后，将自动回到亿蛋大帝旅游宝。' : 'Use the secure link in the email to return to Yidan Travel.' }}</span></div>
+            <button class="submit" type="button" @click="setAuthMode('login')">{{ lang==='zh' ? '返回登录' : 'Back to sign in' }}<i data-lucide="arrow-right"></i></button>
+          </template>
+          <template v-else>
+            <div v-if="authMode!=='forgot' && authMode!=='update'" class="auth-tabs">
+              <button type="button" :class="{active:authMode==='login'}" @click="setAuthMode('login')">{{ lang==='zh' ? '登录' : 'Sign in' }}</button>
+              <button type="button" :class="{active:authMode==='register'}" @click="setAuthMode('register')">{{ lang==='zh' ? '注册' : 'Create account' }}</button>
+            </div>
+            <h2>{{ authMode==='register' ? (lang==='zh'?'创建旅行账号':'Create your travel account') : authMode==='forgot' ? (lang==='zh'?'找回密码':'Reset your password') : authMode==='update' ? (lang==='zh'?'设置新密码':'Choose a new password') : (lang==='zh'?'欢迎回来':'Welcome back') }}</h2>
+            <p>{{ authMode==='register' ? (lang==='zh'?'注册后需要前往邮箱完成验证。':'Verify your email after creating the account.') : authMode==='forgot' ? (lang==='zh'?'输入注册邮箱，我们会发送安全重置链接。':'We will send a secure reset link to your email.') : authMode==='update' ? (lang==='zh'?'使用至少 8 位的新密码保护你的账号。':'Protect your account with a new password of 8+ characters.') : (lang==='zh'?'登录后继续收藏目的地与规划旅程。':'Sign in to keep planning and saving destinations.') }}</p>
+            <label v-if="authMode==='register'">{{ lang==='zh' ? '昵称' : 'Display name' }}<input v-model.trim="loginForm.name" autocomplete="name" :placeholder="lang==='zh'?'例如：亿蛋大帝':'e.g. Yidan'"></label>
+            <label v-if="authMode!=='update'">{{ lang==='zh' ? '邮箱' : 'Email' }}<input v-model.trim="loginForm.email" type="email" autocomplete="email" inputmode="email" placeholder="traveler@example.com"></label>
+            <label v-if="authMode!=='forgot'">{{ lang==='zh' ? '密码' : 'Password' }}
+              <span class="password-field"><input v-model="loginForm.password" :type="showPassword?'text':'password'" :autocomplete="authMode==='login'?'current-password':'new-password'" placeholder="••••••••"><button type="button" @click="showPassword=!showPassword" :aria-label="showPassword?'Hide password':'Show password'"><i :data-lucide="showPassword?'eye-off':'eye'"></i></button></span>
+            </label>
+            <div v-if="['register','update'].includes(authMode) && loginForm.password" class="password-strength" :data-score="passwordScore"><span><i v-for="n in 4" :class="{active:n<=passwordScore}"></i></span><small>{{ passwordStrengthText }}</small></div>
+            <label v-if="['register','update'].includes(authMode)">{{ lang==='zh' ? '确认密码' : 'Confirm password' }}
+              <span class="password-field"><input v-model="loginForm.confirmPassword" :type="showConfirmPassword?'text':'password'" autocomplete="new-password" placeholder="••••••••"><button type="button" @click="showConfirmPassword=!showConfirmPassword"><i :data-lucide="showConfirmPassword?'eye-off':'eye'"></i></button></span>
+            </label>
+            <button v-if="authMode==='login'" class="forgot-password" type="button" @click="setAuthMode('forgot')">{{ lang==='zh' ? '忘记密码？' : 'Forgot password?' }}</button>
+            <p v-if="authError" class="auth-alert error"><i data-lucide="circle-alert"></i>{{ authError }}</p>
+            <p v-if="authMessage" class="auth-alert success"><i data-lucide="circle-check"></i>{{ authMessage }}</p>
+            <button class="submit" type="submit" :disabled="authLoading || !authReady"><span v-if="authLoading" class="spinner"></span><template v-else>{{ authMode==='register' ? (lang==='zh'?'创建账号':'Create account') : authMode==='forgot' ? (lang==='zh'?'发送重置邮件':'Send reset email') : authMode==='update' ? (lang==='zh'?'保存新密码':'Save new password') : (lang==='zh'?'安全登录':'Sign in securely') }}<i data-lucide="arrow-right"></i></template></button>
+            <button v-if="['forgot','update'].includes(authMode)" class="auth-back" type="button" @click="setAuthMode('login')">{{ lang==='zh' ? '返回登录' : 'Back to sign in' }}</button>
+            <small><i data-lucide="lock-keyhole"></i>{{ lang==='zh' ? '由 Supabase Auth 提供加密认证，网站不会保存你的明文密码。' : 'Encrypted authentication by Supabase Auth. This website never stores your plain password.' }}</small>
+          </template>
+        </form>
+      </div>
+    </transition>
 
     <transition name="toast"><div v-if="toast" class="toast"><i data-lucide="circle-check"></i>{{ toast }}</div></transition>
   </div>
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=agency-route-1"></script>
+  <script src="app.js?v=auth-supabase-1"></script>
 </body>
 </html>
