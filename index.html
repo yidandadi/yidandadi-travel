@@ -50,12 +50,16 @@
             <div class="divider"></div>
             <div class="search-field date-field">
               <i data-lucide="calendar-days"></i>
-              <div><label>{{ t('when') }}</label><input type="date" v-model="travelDate" :min="today"></div>
+              <div><label>{{ t('when') }}</label><input type="date" v-model="travelDate" :min="today" :max="maxTravelDate" @change="onPreferencesChange"></div>
             </div>
-            <button @click="searchCity" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="search"></i>{{ loading ? t('searching') : t('explore') }}</button>
+            <button @click="onPreferencesChange(); searchCity()" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="search"></i>{{ loading ? t('searching') : t('explore') }}</button>
             <div v-if="suggestions.length" class="suggestions">
               <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.feature_code === 'ADM1' ? '行政区 · ' : '' }}{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
             </div>
+          </div>
+          <div class="trip-preferences">
+            <label class="days-control"><span>{{ t('tripLength') }}</span><select v-model.number="tripDays" @change="onPreferencesChange"><option v-for="n in 7" :value="n">{{ n }} {{ t('days') }}</option></select></label>
+            <label class="hero-budget-control"><span>{{ t('totalBudget') }}</span><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><strong>¥ {{ Number(budget).toLocaleString() }}</strong><small>{{ t('perDay') }} ¥ {{ dailyBudget.toLocaleString() }}</small></label>
           </div>
           <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
         </div>
@@ -91,13 +95,13 @@
       <section id="planner" class="planner-section">
         <div class="planner-copy"><span class="kicker">{{ t('tripPlanner') }}</span><h2>{{ t('planTitle') }}</h2><p>{{ t('planSub') }}</p><div class="feature-list"><span><i data-lucide="cloud-sun"></i>{{ t('feature1') }}</span><span><i data-lucide="wallet-cards"></i>{{ t('feature2') }}</span><span><i data-lucide="save"></i>{{ t('feature3') }}</span></div></div>
         <div class="planner-card">
-          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : itinerary.length + ' ' + t('activities') }}</span></div>
+          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name + ' · ' + tripDays + ' ' + t('days') : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : itinerary.length + ' ' + t('activities') }}</span></div>
           <div v-if="attractionsLoading" class="plan-state"><span class="spinner dark-spinner"></span><b>{{ t('findingPlaces') }}</b><small>OpenStreetMap</small></div>
           <div v-else-if="planError" class="plan-state"><i data-lucide="cloud-off"></i><b>{{ planError }}</b><button @click="loadAttractions(selectedCity)">{{ t('retry') }}</button></div>
-          <div v-else class="timeline"><div v-for="(item,i) in itinerary" :key="item.day + '-' + item.zh" class="timeline-item"><span class="time"><b>DAY {{ item.day }}</b><small>{{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><em class="plan-weather">{{ item.forecast }}</em></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div></div>
+          <div v-else class="timeline"><div v-for="(item,i) in itinerary" :key="item.day + '-' + item.zh" class="timeline-item"><span class="time"><b>DAY {{ item.day }}</b><small>{{ item.dateLabel }} · {{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><span class="plan-meta"><em class="plan-weather">{{ item.forecast }}</em><em class="cost-pill">{{ t('estimatedCost') }} ¥{{ item.estimatedCost }}</em></span></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div></div>
           <button class="add-activity" @click="addActivity" :disabled="attractionsLoading || !attractions.length"><i data-lucide="sparkles"></i>{{ t('addActivity') }}</button>
           <p class="plan-source">{{ t('placeSource') }}</p>
-          <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ budget.toLocaleString() }}</strong><input type="range" v-model="budget" min="500" max="20000" step="100"></div>
+          <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ Number(budget).toLocaleString() }}</strong><div class="budget-breakdown"><span><small>{{ t('perDay') }}</small><b>¥ {{ dailyBudget.toLocaleString() }}</b></span><span><small>{{ t('ticketEstimate') }}</small><b>¥ {{ itineraryCost.toLocaleString() }}</b></span><span><small>{{ t('flexibleReserve') }}</small><b>¥ {{ reserveBudget.toLocaleString() }}</b></span></div><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><p>{{ budgetAdvice }}</p></div>
         </div>
       </section>
 
@@ -118,6 +122,6 @@
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=region-match-1"></script>
+  <script src="app.js?v=budget-days-1"></script>
 </body>
 </html>
