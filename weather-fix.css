@@ -18,3 +18,22 @@
 .weather-source { display: flex; justify-content: space-between; gap: 14px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.17); font-size: 10px; color: color-mix(in srgb,var(--paper) 68%,transparent); }
 .weather-source a { color: var(--paper); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 @media (max-width: 700px) { .weather-source { align-items: flex-start; flex-direction: column; } }
+i[data-lucide] { display: inline-grid; place-items: center; width: 1.15em; height: 1.15em; font-style: normal; }
+i[data-lucide]::before { content: '•'; font-size: .9em; }
+i[data-lucide="compass"]::before { content: '◉'; }
+i[data-lucide="map-pin"]::before { content: '⌖'; }
+i[data-lucide="calendar-days"]::before { content: '▣'; }
+i[data-lucide="search"]::before { content: '⌕'; font-size: 1.2em; }
+i[data-lucide="sparkles"]::before, i[data-lucide="wand-sparkles"]::before { content: '✦'; }
+i[data-lucide="moon"]::before { content: '☾'; }
+i[data-lucide="sun"]::before { content: '☀'; }
+i[data-lucide="arrow-down"]::before { content: '↓'; }
+i[data-lucide="arrow-right"]::before { content: '→'; }
+i[data-lucide="arrow-up-right"]::before { content: '↗'; }
+i[data-lucide="droplets"]::before { content: '◌'; }
+i[data-lucide="wind"]::before { content: '≋'; }
+i[data-lucide="umbrella"]::before { content: '☂'; }
+i[data-lucide="heart"]::before { content: '♡'; }
+i[data-lucide="plus"]::before { content: '+'; }
+i[data-lucide="x"]::before { content: '×'; }
+i[data-lucide="cloud-off"]::before { content: '☁'; }
