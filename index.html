@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="亿蛋大帝旅游宝——根据实时天气，轻松规划下一次旅行。">
+  <meta name="theme-color" content="#163a2d">
+  <title>亿蛋大帝旅游宝</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
+  <div id="app" v-cloak :class="{ dark: darkMode }">
+    <header class="nav" :class="{scrolled: scrolled}">
+      <a class="brand" href="#" @click.prevent="goHome">
+        <span class="brand-mark"><i data-lucide="compass"></i></span>
+        <span><b>{{ t('brand') }}</b><small>YIDAN TRAVEL</small></span>
+      </a>
+      <nav>
+        <a href="#discover">{{ t('discover') }}</a>
+        <a href="#planner">{{ t('planner') }}</a>
+        <a href="#inspiration">{{ t('inspiration') }}</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-button" @click="darkMode=!darkMode" :aria-label="t('theme')"><i :data-lucide="darkMode ? 'sun' : 'moon'"></i></button>
+        <button class="language" @click="toggleLang">{{ lang === 'zh' ? 'EN' : '中' }}</button>
+        <button v-if="!user" class="login-button" @click="showLogin=true">{{ t('login') }}</button>
+        <button v-else class="profile" @click="showProfile=!showProfile"><span>{{ user.name[0] }}</span>{{ user.name }}</button>
+      </div>
+      <div v-if="showProfile" class="profile-menu"><p>{{ user.email }}</p><button @click="logout">{{ t('logout') }}</button></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <img src="assets/hero-travel.png" alt="山谷与湖泊旅行风景">
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <div class="eyebrow"><i data-lucide="sparkles"></i>{{ t('eyebrow') }}</div>
+          <h1>{{ t('heroTitle1') }}<br><em>{{ t('heroTitle2') }}</em></h1>
+          <p>{{ t('heroSub') }}</p>
+          <div class="search-box">
+            <div class="search-field">
+              <i data-lucide="map-pin"></i>
+              <div><label>{{ t('where') }}</label><input v-model="query" @keyup.enter="searchCity" :placeholder="t('cityPlaceholder')"></div>
+            </div>
+            <div class="divider"></div>
+            <div class="search-field date-field">
+              <i data-lucide="calendar-days"></i>
+              <div><label>{{ t('when') }}</label><input type="date" v-model="travelDate" :min="today"></div>
+            </div>
+            <button @click="searchCity" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="search"></i>{{ loading ? t('searching') : t('explore') }}</button>
+            <div v-if="suggestions.length" class="suggestions">
+              <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
+            </div>
+          </div>
+          <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" @click="quickSearch(city)">{{ city }}</button></div>
+        </div>
+        <div class="scroll-hint"><span>{{ t('scroll') }}</span><i data-lucide="arrow-down"></i></div>
+      </section>
+
+      <section v-if="weather" id="discover" class="weather-section reveal">
+        <div class="section-head">
+          <div><span class="kicker">{{ t('liveWeather') }}</span><h2>{{ selectedCity.name }}，{{ t('ready') }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }} · {{ weather.timezone }}</p></div>
+          <button class="save-button" :class="{saved: isSaved}" @click="toggleSave"><i :data-lucide="isSaved ? 'heart' : 'heart'"></i>{{ isSaved ? t('saved') : t('save') }}</button>
+        </div>
+        <div class="weather-grid">
+          <article class="weather-now">
+            <div><span>{{ formatDate(weather.current.time) }}</span><h3>{{ weatherIcon(weather.current.weather_code) }} {{ weatherText(weather.current.weather_code) }}</h3></div>
+            <strong>{{ Math.round(weather.current.temperature_2m) }}<sup>°</sup></strong>
+            <p>{{ t('feels') }} {{ Math.round(weather.current.apparent_temperature) }}° · {{ t('high') }} {{ Math.round(weather.daily.temperature_2m_max[0]) }}° / {{ t('low') }} {{ Math.round(weather.daily.temperature_2m_min[0]) }}°</p>
+            <div class="weather-stats">
+              <span><i data-lucide="droplets"></i><b>{{ weather.current.relative_humidity_2m }}%</b>{{ t('humidity') }}</span>
+              <span><i data-lucide="wind"></i><b>{{ Math.round(weather.current.wind_speed_10m) }} km/h</b>{{ t('wind') }}</span>
+              <span><i data-lucide="umbrella"></i><b>{{ weather.daily.precipitation_probability_max[0] }}%</b>{{ t('rain') }}</span>
+            </div>
+          </article>
+          <article class="smart-tip"><span><i data-lucide="wand-sparkles"></i>{{ t('smartAdvice') }}</span><h3>{{ smartAdvice.title }}</h3><p>{{ smartAdvice.text }}</p><div class="packing"><b>{{ t('pack') }}</b><span v-for="item in smartAdvice.items">{{ item }}</span></div></article>
+        </div>
+        <div class="forecast"><article v-for="(day,i) in weather.daily.time.slice(1)" :key="day"><span>{{ dayName(day) }}</span><b class="forecast-icon">{{ weatherIcon(weather.daily.weather_code[i+1]) }}</b><strong>{{ Math.round(weather.daily.temperature_2m_max[i+1]) }}°</strong><small>{{ Math.round(weather.daily.temperature_2m_min[i+1]) }}°</small><em><i data-lucide="droplets"></i>{{ weather.daily.precipitation_probability_max[i+1] }}%</em></article></div>
+      </section>
+
+      <section id="planner" class="planner-section">
+        <div class="planner-copy"><span class="kicker">{{ t('tripPlanner') }}</span><h2>{{ t('planTitle') }}</h2><p>{{ t('planSub') }}</p><div class="feature-list"><span><i data-lucide="cloud-sun"></i>{{ t('feature1') }}</span><span><i data-lucide="wallet-cards"></i>{{ t('feature2') }}</span><span><i data-lucide="save"></i>{{ t('feature3') }}</span></div></div>
+        <div class="planner-card">
+          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name : t('dreamTrip') }}</h3></div><span>{{ itinerary.length }} {{ t('activities') }}</span></div>
+          <div class="timeline"><div v-for="(item,i) in itinerary" class="timeline-item"><span class="time">{{ item.time }}</span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small></div><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div>
+          <button class="add-activity" @click="addActivity"><i data-lucide="plus"></i>{{ t('addActivity') }}</button>
+          <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ budget.toLocaleString() }}</strong><input type="range" v-model="budget" min="500" max="20000" step="100"></div>
+        </div>
+      </section>
+
+      <section id="inspiration" class="inspiration-section">
+        <div class="section-head"><div><span class="kicker">{{ t('inspiration') }}</span><h2>{{ t('placesTitle') }}</h2><p>{{ t('placesSub') }}</p></div></div>
+        <div class="destination-grid">
+          <article v-for="place in destinations" @click="quickSearch(place.search)"><div class="place-image" :style="{background: place.gradient}"><span>{{ place.emoji }}</span><button><i data-lucide="arrow-up-right"></i></button></div><div><small>{{ lang==='zh' ? place.tagZh : place.tagEn }}</small><h3>{{ lang==='zh' ? place.zh : place.en }}</h3><p>{{ lang==='zh' ? place.descZh : place.descEn }}</p></div></article>
+        </div>
+      </section>
+    </main>
+
+    <footer><div class="brand"><span class="brand-mark"><i data-lucide="compass"></i></span><span><b>{{ t('brand') }}</b><small>YIDAN TRAVEL</small></span></div><p>{{ t('footer') }}</p><span>© 2026 Yidan Travel</span></footer>
+
+    <transition name="modal"><div v-if="showLogin" class="modal-backdrop" @click.self="showLogin=false"><form class="login-modal" @submit.prevent="login"><button type="button" class="modal-close" @click="showLogin=false"><i data-lucide="x"></i></button><span class="login-icon"><i data-lucide="map"></i></span><h2>{{ t('welcome') }}</h2><p>{{ t('loginSub') }}</p><label>{{ t('name') }}<input v-model="loginForm.name" required :placeholder="t('namePh')"></label><label>{{ t('email') }}<input v-model="loginForm.email" type="email" required placeholder="traveler@example.com"></label><button class="submit" type="submit">{{ t('startJourney') }}<i data-lucide="arrow-right"></i></button><small>{{ t('privacy') }}</small></form></div></transition>
+
+    <transition name="toast"><div v-if="toast" class="toast"><i data-lucide="circle-check"></i>{{ toast }}</div></transition>
+  </div>
+  <script src="vendor/vue.global.prod.js"></script>
+  <script src="vendor/lucide.min.js"></script>
+  <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
+  <script src="app.js"></script>
+</body>
+</html>
