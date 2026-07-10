@@ -95,10 +95,14 @@
       <section id="planner" class="planner-section">
         <div class="planner-copy"><span class="kicker">{{ t('tripPlanner') }}</span><h2>{{ t('planTitle') }}</h2><p>{{ t('planSub') }}</p><div class="feature-list"><span><i data-lucide="cloud-sun"></i>{{ t('feature1') }}</span><span><i data-lucide="wallet-cards"></i>{{ t('feature2') }}</span><span><i data-lucide="save"></i>{{ t('feature3') }}</span></div></div>
         <div class="planner-card">
-          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name + ' · ' + tripDays + ' ' + t('days') : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : itinerary.length + ' ' + t('activities') }}</span></div>
+          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name + ' · ' + tripDays + ' ' + t('days') : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : tripDays + ' ' + t('completeDays') }}</span></div>
           <div v-if="attractionsLoading" class="plan-state"><span class="spinner dark-spinner"></span><b>{{ t('findingPlaces') }}</b><small>OpenStreetMap</small></div>
           <div v-else-if="planError" class="plan-state"><i data-lucide="cloud-off"></i><b>{{ planError }}</b><button @click="loadAttractions(selectedCity)">{{ t('retry') }}</button></div>
-          <div v-else class="timeline"><div v-for="(item,i) in itinerary" :key="item.day + '-' + item.zh" class="timeline-item"><span class="time"><b>DAY {{ item.day }}</b><small>{{ item.dateLabel }} · {{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><span class="plan-meta"><em class="plan-weather">{{ item.forecast }}</em><em class="cost-pill">{{ t('estimatedCost') }} ¥{{ item.estimatedCost }}</em></span></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div></div>
+          <template v-else>
+            <div v-if="itinerary.length" class="day-tabs"><button v-for="day in tripDays" :key="day" :class="{active:activeDay===day}" @click="activeDay=day"><b>DAY {{ day }}</b><small>{{ dayDateLabel(day) }}</small></button></div>
+            <div v-if="activeDayItems.length" class="day-route-summary"><span><b>DAY {{ activeDay }}</b>{{ activeDayItems[0].dateLabel }} · {{ activeDayItems[0].forecast }}</span><strong>{{ t('estimatedCost') }} ¥{{ activeDayCost.toLocaleString() }}</strong></div>
+            <div class="timeline agency-timeline"><div v-for="item in activeDayItems" :key="item.day + '-' + item.type" class="timeline-item"><span class="time"><b>{{ t(item.type) }}</b><small>{{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><span class="plan-meta"><em class="plan-weather">{{ item.forecast }}</em><em class="cost-pill">{{ t('estimatedCost') }} ¥{{ item.estimatedCost }}</em></span></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a></div></div></div>
+          </template>
           <button class="add-activity" @click="addActivity" :disabled="attractionsLoading || !attractions.length"><i data-lucide="sparkles"></i>{{ t('addActivity') }}</button>
           <p class="plan-source">{{ t('placeSource') }}</p>
           <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ Number(budget).toLocaleString() }}</strong><div class="budget-breakdown"><span><small>{{ t('perDay') }}</small><b>¥ {{ dailyBudget.toLocaleString() }}</b></span><span><small>{{ t('ticketEstimate') }}</small><b>¥ {{ itineraryCost.toLocaleString() }}</b></span><span><small>{{ t('flexibleReserve') }}</small><b>¥ {{ reserveBudget.toLocaleString() }}</b></span></div><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><p>{{ budgetAdvice }}</p></div>
@@ -122,6 +126,6 @@
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=budget-days-1"></script>
+  <script src="app.js?v=agency-route-1"></script>
 </body>
 </html>
