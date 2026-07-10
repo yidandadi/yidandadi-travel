@@ -91,9 +91,12 @@
       <section id="planner" class="planner-section">
         <div class="planner-copy"><span class="kicker">{{ t('tripPlanner') }}</span><h2>{{ t('planTitle') }}</h2><p>{{ t('planSub') }}</p><div class="feature-list"><span><i data-lucide="cloud-sun"></i>{{ t('feature1') }}</span><span><i data-lucide="wallet-cards"></i>{{ t('feature2') }}</span><span><i data-lucide="save"></i>{{ t('feature3') }}</span></div></div>
         <div class="planner-card">
-          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name : t('dreamTrip') }}</h3></div><span>{{ itinerary.length }} {{ t('activities') }}</span></div>
-          <div class="timeline"><div v-for="(item,i) in itinerary" class="timeline-item"><span class="time">{{ item.time }}</span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small></div><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div>
-          <button class="add-activity" @click="addActivity"><i data-lucide="plus"></i>{{ t('addActivity') }}</button>
+          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : itinerary.length + ' ' + t('activities') }}</span></div>
+          <div v-if="attractionsLoading" class="plan-state"><span class="spinner dark-spinner"></span><b>{{ t('findingPlaces') }}</b><small>OpenStreetMap</small></div>
+          <div v-else-if="planError" class="plan-state"><i data-lucide="cloud-off"></i><b>{{ planError }}</b><button @click="loadAttractions(selectedCity)">{{ t('retry') }}</button></div>
+          <div v-else class="timeline"><div v-for="(item,i) in itinerary" :key="item.day + '-' + item.zh" class="timeline-item"><span class="time"><b>DAY {{ item.day }}</b><small>{{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><em class="plan-weather">{{ item.forecast }}</em></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a><button @click="removeActivity(i)"><i data-lucide="x"></i></button></div></div></div>
+          <button class="add-activity" @click="addActivity" :disabled="attractionsLoading || !attractions.length"><i data-lucide="sparkles"></i>{{ t('addActivity') }}</button>
+          <p class="plan-source">{{ t('placeSource') }}</p>
           <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ budget.toLocaleString() }}</strong><input type="range" v-model="budget" min="500" max="20000" step="100"></div>
         </div>
       </section>
@@ -115,6 +118,6 @@
   <script src="vendor/vue.global.prod.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=weather-global-3"></script>
+  <script src="app.js?v=smart-plan-2"></script>
 </body>
 </html>

@@ -37,3 +37,17 @@ i[data-lucide="heart"]::before { content: '♡'; }
 i[data-lucide="plus"]::before { content: '+'; }
 i[data-lucide="x"]::before { content: '×'; }
 i[data-lucide="cloud-off"]::before { content: '☁'; }
+.plan-state { min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); text-align: center; }
+.plan-state > svg { width: 34px; height: 34px; color: var(--gold); }
+.plan-state > button { border: 0; border-radius: 9px; background: var(--green); color: var(--paper); padding: 9px 16px; }
+.timeline-item .time { display: flex; flex-direction: column; gap: 3px; }
+.timeline-item .time b { color: var(--gold); font-size: 10px; letter-spacing: .7px; }
+.timeline-item .time small { color: var(--muted); font-size: 11px; }
+.timeline-item > div:nth-child(3) { min-width: 0; }
+.timeline-item > div:nth-child(3) > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-weather { width: fit-content; margin-top: 5px; padding: 4px 7px; background: color-mix(in srgb,var(--gold) 13%,transparent); border-radius: 5px; color: var(--gold); font-size: 10px; font-style: normal; }
+.timeline-actions { display: flex; align-items: center; gap: 2px; }
+.timeline-actions a,.timeline-actions button { width: 27px; height: 27px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; border-radius: 50%; }
+.timeline-actions a:hover,.timeline-actions button:hover { background: var(--paper); color: var(--green); }
+.plan-source { color: var(--muted); font-size: 10px; text-align: center; margin: 12px 0 0; }
+.add-activity:disabled { opacity: .45; cursor: not-allowed; }
