@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="weather-fix.css?v=cloud-map-1">
+  <link rel="stylesheet" href="weather-fix.css?v=flow-1">
 </head>
 <body>
   <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
@@ -40,12 +40,14 @@
         <button class="language" @click="toggleLang">{{ lang === 'zh' ? 'EN' : '中' }}</button>
         <button v-if="!user" class="login-button" @click="setAuthMode('login');showLogin=true">{{ t('login') }}</button>
         <button v-else class="profile" @click="showProfile=!showProfile"><span>{{ user.name[0] }}</span>{{ user.name }}</button>
+        <button class="mobile-menu-button" @click="showMobileMenu=!showMobileMenu" :aria-label="lang==='zh'?'打开菜单':'Open menu'"><i :data-lucide="showMobileMenu?'x':'menu'"></i></button>
       </div>
       <div v-if="showProfile" class="profile-menu"><strong>{{ user.name }}</strong><p>{{ user.email }}</p><small class="verified-badge"><i data-lucide="badge-check"></i>{{ lang==='zh'?'真实账号 · 已认证':'Verified account' }}</small><button class="profile-trip-link" @click="openMyTrips()"><i data-lucide="luggage"></i>{{ lang==='zh'?'我的旅行':'My Trips' }}</button><button @click="logout" :disabled="authLoading">{{ t('logout') }}</button></div>
+      <transition name="modal"><div v-if="showMobileMenu" class="mobile-nav-menu"><button @click="mobileNavigate('#discover')">{{ t('discover') }}</button><button @click="mobileNavigate('#planner')">{{ t('planner') }}</button><button @click="mobileNavigate('#inspiration')">{{ t('inspiration') }}</button><button v-if="user" @click="showMobileMenu=false;openMyTrips()">{{ lang==='zh'?'我的旅行':'My Trips' }}</button><hr><button @click="darkMode=!darkMode"><i :data-lucide="darkMode?'sun':'moon'"></i>{{ t('theme') }}</button><button @click="toggleLang"><i data-lucide="languages"></i>{{ lang==='zh'?'English':'中文' }}</button></div></transition>
     </header>
 
     <main>
-      <section class="hero">
+      <section class="hero" :class="{configured:selectedCity}">
         <div class="hero-wallpapers" aria-live="polite">
           <img v-if="previousWallpaper!==null" class="hero-wallpaper previous" :src="wallpapers[previousWallpaper].src" alt="" aria-hidden="true">
           <img class="hero-wallpaper current" :key="activeWallpaper" :src="wallpapers[activeWallpaper].src" :alt="lang==='zh' ? wallpapers[activeWallpaper].zh + '旅行风景' : wallpapers[activeWallpaper].en + ' travel landscape'">
@@ -60,21 +62,18 @@
               <i data-lucide="map-pin"></i>
               <div><label>{{ t('where') }}</label><input v-model="query" @keyup.enter="searchCity" :placeholder="t('cityPlaceholder')"></div>
             </div>
-            <div class="divider"></div>
-            <div class="search-field date-field">
-              <i data-lucide="calendar-days"></i>
-              <div><label>{{ t('when') }}</label><input type="date" v-model="travelDate" :min="today" :max="maxTravelDate" @change="onPreferencesChange"></div>
-            </div>
-            <button @click="onPreferencesChange(); searchCity()" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="search"></i>{{ loading ? t('searching') : t('explore') }}</button>
+            <button @click="searchCity" :disabled="loading"><span v-if="loading" class="spinner"></span><i v-else data-lucide="arrow-right"></i>{{ loading ? t('searching') : t('explore') }}</button>
             <div v-if="suggestions.length" class="suggestions">
-              <button v-for="city in suggestions" :key="city.id" @click="selectCity(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.feature_code === 'ADM1' ? '行政区 · ' : '' }}{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
+              <button v-for="city in suggestions" :key="city.id" @click="chooseSuggestion(city)"><i data-lucide="map-pin"></i><span><b>{{ city.name }}</b><small>{{ city.feature_code === 'ADM1' ? '行政区 · ' : '' }}{{ city.admin1 ? city.admin1 + ' · ' : '' }}{{ city.country }}</small></span></button>
             </div>
-          </div>
-          <div class="trip-preferences">
-            <label class="days-control"><span>{{ t('tripLength') }}</span><select v-model.number="tripDays" @change="onPreferencesChange"><option v-for="n in 7" :value="n">{{ n }} {{ t('days') }}</option></select></label>
-            <label class="hero-budget-control"><span>{{ t('totalBudget') }}</span><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><strong>¥ {{ Number(budget).toLocaleString() }}</strong><small>{{ t('perDay') }} ¥ {{ dailyBudget.toLocaleString() }}</small></label>
           </div>
           <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
+          <transition name="setup"><section v-if="selectedCity" class="trip-setup-card">
+            <div class="setup-heading"><span><i data-lucide="map-pin"></i></span><div><small>{{ lang==='zh'?'第二步 · 完善旅行参数':'STEP 2 · TRIP DETAILS' }}</small><h2>{{ lang==='zh'?`去 ${selectedCity.name} 旅行`:`Trip to ${selectedCity.name}` }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }}</p></div></div>
+            <div class="setup-fields"><label><span>{{ t('when') }}</span><input type="date" v-model="travelDate" :min="today" :max="maxTravelDate" @change="onPreferencesChange"></label><label class="days-control"><span>{{ t('tripLength') }}</span><select v-model.number="tripDays" @change="onPreferencesChange"><option v-for="n in 7" :value="n">{{ n }} {{ t('days') }}</option></select></label><label class="setup-budget"><span>{{ t('totalBudget') }}</span><strong>¥{{ Number(budget).toLocaleString() }}</strong><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><small>{{ t('perDay') }} ¥{{ dailyBudget.toLocaleString() }}</small></label></div>
+            <div class="interest-picker"><span>{{ lang==='zh'?'你喜欢怎样旅行？':'What do you enjoy?' }}</span><div><button v-for="option in interestOptions" :key="option.id" :class="{active:travelInterests.includes(option.id)}" @click="toggleInterest(option.id)"><b>{{ option.icon }}</b>{{ option[lang] }}</button></div></div>
+            <button class="generate-plan-button" @click="startPlanning" :disabled="loading||planLoading"><span v-if="planLoading" class="spinner"></span><i v-else data-lucide="sparkles"></i>{{ planLoading?(lang==='zh'?'正在规划…':'Planning…'):(lang==='zh'?'生成旅行计划':'Generate trip plan') }}<i data-lucide="arrow-right"></i></button>
+          </section></transition>
         </div>
         <aside class="spotlight-card">
           <div class="spotlight-location"><span class="spotlight-pin">⌖</span><div><small>{{ lang==='zh' ? wallpapers[activeWallpaper].countryZh : wallpapers[activeWallpaper].countryEn }}</small><strong>{{ lang==='zh' ? wallpapers[activeWallpaper].zh : wallpapers[activeWallpaper].en }}</strong><p>{{ lang==='zh' ? wallpapers[activeWallpaper].descZh : wallpapers[activeWallpaper].descEn }}</p></div></div>
@@ -112,17 +111,18 @@
       <section id="planner" class="planner-section">
         <div class="planner-copy"><span class="kicker">{{ t('tripPlanner') }}</span><h2>{{ t('planTitle') }}</h2><p>{{ t('planSub') }}</p><div class="feature-list"><span><i data-lucide="cloud-sun"></i>{{ t('feature1') }}</span><span><i data-lucide="wallet-cards"></i>{{ t('feature2') }}</span><span><i data-lucide="save"></i>{{ t('feature3') }}</span></div></div>
         <div class="planner-card">
-          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name + ' · ' + tripDays + ' ' + t('days') : t('dreamTrip') }}</h3></div><span>{{ attractionsLoading ? t('findingPlaces') : tripDays + ' ' + t('completeDays') }}</span></div>
-          <div v-if="attractionsLoading" class="plan-state"><span class="spinner dark-spinner"></span><b>{{ t('findingPlaces') }}</b><small>OpenStreetMap</small></div>
+          <div class="planner-top"><div><small>{{ t('myTrip') }}</small><h3>{{ selectedCity ? selectedCity.name + ' · ' + tripDays + ' ' + t('days') : t('dreamTrip') }}</h3></div><span>{{ planLoading ? t('findingPlaces') : tripDays + ' ' + t('completeDays') }}</span></div>
+          <div v-if="planLoading" class="plan-state"><span class="spinner dark-spinner"></span><b>{{ t('findingPlaces') }}</b><small>OpenStreetMap</small></div>
           <div v-else-if="planError" class="plan-state"><i data-lucide="cloud-off"></i><b>{{ planError }}</b><button @click="loadAttractions(selectedCity)">{{ t('retry') }}</button></div>
           <template v-else>
             <div v-if="itinerary.length" class="planner-toolbar"><div class="planner-view-switch"><button :class="{active:plannerView==='list'}" @click="setPlannerView('list')"><i data-lucide="list"></i>{{ lang==='zh'?'行程列表':'List' }}</button><button :class="{active:plannerView==='map'}" @click="setPlannerView('map')"><i data-lucide="map"></i>{{ lang==='zh'?'路线地图':'Map' }}</button></div><div class="trip-actions"><button @click="shareCurrentTrip"><i data-lucide="link"></i>{{ lang==='zh'?'分享':'Share' }}</button><button class="primary" @click="saveCurrentTrip" :disabled="savingTrip"><i data-lucide="cloud-upload"></i>{{ savingTrip?(lang==='zh'?'保存中…':'Saving…'):(lang==='zh'?'保存行程':'Save trip') }}</button></div></div>
             <div v-if="itinerary.length" class="day-tabs"><button v-for="day in tripDays" :key="day" :class="{active:activeDay===day}" @click="activeDay=day"><b>DAY {{ day }}</b><small>{{ dayDateLabel(day) }}</small></button></div>
             <div v-if="activeDayItems.length" class="day-route-summary"><span><b>DAY {{ activeDay }}</b>{{ activeDayItems[0].dateLabel }} · {{ activeDayItems[0].forecast }}</span><strong>{{ t('estimatedCost') }} ¥{{ activeDayCost.toLocaleString() }}</strong></div>
+            <details v-if="activeDayReasons.length" class="planning-reasons"><summary><i data-lucide="brain-circuit"></i>{{ lang==='zh'?'为什么这样规划？':'Why this plan?' }}<i data-lucide="chevron-down"></i></summary><div><p v-for="reason in activeDayReasons" :key="reason.text"><i :data-lucide="reason.icon"></i><span>{{ reason.text }}</span></p></div></details>
             <div v-show="plannerView==='list'" class="timeline agency-timeline"><div v-for="item in activeDayItems" :key="item.day + '-' + item.type" class="timeline-item"><span class="time"><b>{{ t(item.type) }}</b><small>{{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><span class="plan-meta"><em class="plan-weather">{{ item.forecast }}</em><em class="cost-pill">{{ t('estimatedCost') }} ¥{{ item.estimatedCost }}</em></span></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a></div></div></div>
             <div v-show="plannerView==='map'" class="route-map-layout"><div id="route-map" class="route-map"></div><div class="map-stop-list"><small>{{ lang==='zh'?'当日顺路路线':'DAY ROUTE' }}</small><ol><li v-for="(point,i) in activeDayRoutePoints" :key="point.name+'-'+i"><b>{{ i+1 }}</b><span><strong>{{ point.name }}</strong><small>{{ point.time }} · {{ t(point.type) }}</small></span></li></ol><p><i data-lucide="info"></i>{{ lang==='zh'?'编号按游玩顺序排列；虚线表示建议串联顺序。':'Numbers follow visit order; the dashed line shows the suggested sequence.' }}</p></div></div>
           </template>
-          <button class="add-activity" @click="addActivity" :disabled="attractionsLoading || !attractions.length"><i data-lucide="sparkles"></i>{{ t('addActivity') }}</button>
+          <button class="add-activity" @click="addActivity" :disabled="planLoading || !attractions.length"><i data-lucide="sparkles"></i>{{ t('addActivity') }}</button>
           <p class="plan-source">{{ t('placeSource') }}</p>
           <div class="budget"><span>{{ t('estimated') }}</span><strong>¥ {{ Number(budget).toLocaleString() }}</strong><div class="budget-breakdown"><span><small>{{ t('perDay') }}</small><b>¥ {{ dailyBudget.toLocaleString() }}</b></span><span><small>{{ t('ticketEstimate') }}</small><b>¥ {{ itineraryCost.toLocaleString() }}</b></span><span><small>{{ t('flexibleReserve') }}</small><b>¥ {{ reserveBudget.toLocaleString() }}</b></span></div><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><p>{{ budgetAdvice }}</p></div>
         </div>
@@ -204,6 +204,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="supabase-config.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=cloud-map-1"></script>
+  <script src="app.js?v=flow-1"></script>
 </body>
 </html>
