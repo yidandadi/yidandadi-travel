@@ -1,23 +1,68 @@
 # 亿蛋大帝旅游宝
 
-一个基于 Vue 3 和 Open-Meteo API 的双语智能旅行规划网站。
+一个基于 Vue 3 的双语智能旅行规划网站：结合实时天气、OpenStreetMap 真实地点、预算与地理距离，生成旅行社式完整路线。
 
-## 功能
+![亿蛋大帝旅游宝首屏](assets/spotlight-lofoten.png)
 
-- 全球城市搜索与实时天气、七日预报
-- 根据温度和降水概率生成出行与行李建议
-- 行程安排、预算滑块、城市收藏和最近搜索
-- 中英文切换、深色模式、本地演示登录
-- 响应式布局与完整的加载/错误反馈
+## 在线体验
 
-## 本地预览
+[https://yidandadi.github.io/yidandadi-travel/](https://yidandadi.github.io/yidandadi-travel/)
 
-直接打开 `index.html`，或在目录中运行任意静态服务器。
+## 核心功能
+
+- 全球城市搜索与 Open-Meteo 16 日天气预报
+- 天气感知路线规划：雨天优先室内、高温避开正午户外
+- 预算自适应的景点、餐饮与住宿组合
+- OpenStreetMap 真实景点、餐厅与住宿 POI
+- Leaflet 每日路线地图与编号站点
+- Supabase Auth：注册、邮箱验证、登录、密码重置
+- Supabase 云同步：收藏城市与完整行程跨设备保存
+- “我的旅行”中心：查看、恢复和删除云端行程
+- 中英双语、深色模式与 Spotlight 风景壁纸轮播
+- 可分享的城市、日期、天数和预算链接
+
+## 技术栈
+
+- Vue 3（浏览器构建，无打包步骤）
+- Supabase Auth + Postgres + Row Level Security
+- Leaflet 1.9.4 + OpenStreetMap
+- Open-Meteo Forecast / Geocoding API
+- Overpass API
+- GitHub Pages / GitHub Actions
+
+## 规划算法
+
+路线生成会综合：
+
+1. 出发日期对应的逐日天气和降水概率；
+2. 景点的室内/室外属性与预计门票；
+3. 用户总预算和每日预算档位；
+4. 景点、餐厅、酒店之间的球面距离；
+5. 同一天内减少回头路并避免地点重复。
+
+最终形成“上午两站 → 午餐 → 下午两站 → 晚餐 → 住宿”的完整日程。
+
+## Supabase 初始化
+
+1. 创建 Supabase 项目并在 `supabase-config.js` 填写 Project URL 和 Publishable key。
+2. 在 Supabase Dashboard 的 SQL Editor 中运行：
+
+   `supabase/migrations/20260711_travel_cloud.sql`
+
+迁移会创建 `profiles`、`saved_cities`、`saved_trips` 三张表，并启用 RLS。每个登录用户只能访问自己的收藏和行程。
+
+## 本地运行
+
+这是静态网站，可直接打开 `index.html`，或启动任意静态服务器：
+
+```bash
+python -m http.server 8080
+```
+
+然后访问 `http://localhost:8080`。
 
 ## 数据来源
 
-天气与地理编码数据来自 [Open-Meteo](https://open-meteo.com/)，无需 API Key。
-
-## 演示提示
-
-搜索“北京 / Tokyo / Paris”等城市，选择搜索建议即可加载真实天气。登录信息、收藏与偏好仅保存在浏览器本地，不会上传。
+- 天气与地理编码：[Open-Meteo](https://open-meteo.com/)
+- 地点数据与地图：[OpenStreetMap](https://www.openstreetmap.org/)
+- 用户认证与云数据：[Supabase](https://supabase.com/)
