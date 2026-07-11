@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="weather-fix.css?v=auth-inspiration-1">
+  <link rel="stylesheet" href="weather-fix.css?v=demo-photos-1">
 </head>
 <body>
   <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
@@ -69,6 +69,7 @@
             </div>
           </div>
           <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
+          <button v-if="!searchHistory.length && !selectedCity" class="example-trip-link" @click="loadExampleTrip"><i data-lucide="play-circle"></i><span>{{ lang==='zh'?'不知道去哪？查看「杭州 3 日游」示例':'Not sure where to go? View a 3-day Hangzhou example' }}</span><i data-lucide="arrow-right"></i></button>
           <transition name="setup"><section v-if="selectedCity" class="trip-setup-card">
             <div class="setup-heading"><span><i data-lucide="map-pin"></i></span><div><small>{{ lang==='zh'?'第二步 · 完善旅行参数':'STEP 2 · TRIP DETAILS' }}</small><h2>{{ lang==='zh'?`去 ${selectedCity.name} 旅行`:`Trip to ${selectedCity.name}` }}</h2><p>{{ selectedCity.admin1 }} · {{ selectedCity.country }}</p></div></div>
             <div class="setup-fields"><label><span>{{ t('when') }}</span><input type="date" v-model="travelDate" :min="today" :max="maxTravelDate" @change="onPreferencesChange"></label><label class="days-control"><span>{{ t('tripLength') }}</span><select v-model.number="tripDays" @change="onPreferencesChange"><option v-for="n in 7" :value="n">{{ n }} {{ t('days') }}</option></select></label><label class="setup-budget"><span>{{ t('totalBudget') }}</span><strong>¥{{ Number(budget).toLocaleString() }}</strong><input type="range" v-model.number="budget" min="500" max="30000" step="100" @change="onPreferencesChange"><small>{{ t('perDay') }} ¥{{ dailyBudget.toLocaleString() }}</small></label></div>
@@ -119,7 +120,7 @@
             <div v-if="itinerary.length" class="planner-toolbar"><div class="planner-view-switch"><button :class="{active:plannerView==='list'}" @click="setPlannerView('list')"><i data-lucide="list"></i>{{ lang==='zh'?'行程列表':'List' }}</button><button :class="{active:plannerView==='map'}" @click="setPlannerView('map')"><i data-lucide="map"></i>{{ lang==='zh'?'路线地图':'Map' }}</button></div><div class="trip-actions"><button @click="shareCurrentTrip"><i data-lucide="link"></i>{{ lang==='zh'?'分享':'Share' }}</button><button class="primary" @click="saveCurrentTrip" :disabled="savingTrip"><i data-lucide="cloud-upload"></i>{{ savingTrip?(lang==='zh'?'保存中…':'Saving…'):(lang==='zh'?'保存行程':'Save trip') }}</button></div></div>
             <div v-if="itinerary.length" class="day-tabs"><button v-for="day in tripDays" :key="day" :class="{active:activeDay===day}" @click="activeDay=day"><b>DAY {{ day }}</b><small>{{ dayDateLabel(day) }}</small></button></div>
             <div v-if="activeDayItems.length" class="day-route-summary"><span><b>DAY {{ activeDay }}</b>{{ activeDayItems[0].dateLabel }} · {{ activeDayItems[0].forecast }}</span><strong>{{ t('estimatedCost') }} ¥{{ activeDayCost.toLocaleString() }}</strong></div>
-            <details v-if="activeDayReasons.length" class="planning-reasons"><summary><i data-lucide="brain-circuit"></i>{{ lang==='zh'?'为什么这样规划？':'Why this plan?' }}<i data-lucide="chevron-down"></i></summary><div><p v-for="reason in activeDayReasons" :key="reason.text"><i :data-lucide="reason.icon"></i><span>{{ reason.text }}</span></p></div></details>
+            <section v-if="activeDayReasons.length" class="planning-basis-card"><header><span><i data-lucide="brain-circuit"></i></span><div><b>{{ lang==='zh'?'今日规划依据':'Today’s planning logic' }}</b><small>{{ lang==='zh'?'天气 · 预算 · 距离 · 兴趣共同参与排序':'Weather · budget · distance · interests' }}</small></div></header><div><p v-for="reason in activeDayReasons" :key="reason.text"><i :data-lucide="reason.icon"></i><span>{{ reason.text }}</span></p></div></section>
             <div v-show="plannerView==='list'" class="timeline agency-timeline"><div v-for="item in activeDayItems" :key="item.day + '-' + item.type" class="timeline-item"><span class="time"><b>{{ t(item.type) }}</b><small>{{ item.time }}</small></span><div class="timeline-dot"><i :data-lucide="item.icon"></i></div><div><b>{{ lang==='zh' ? item.zh : item.en }}</b><small>{{ lang==='zh' ? item.descZh : item.descEn }}</small><span class="plan-meta"><em class="plan-weather">{{ item.forecast }}</em><em class="cost-pill">{{ t('estimatedCost') }} ¥{{ item.estimatedCost }}</em></span></div><div class="timeline-actions"><a :href="item.mapUrl" target="_blank" rel="noopener" :title="t('openMap')"><i data-lucide="map-pin"></i></a></div></div></div>
             <div v-show="plannerView==='map'" class="route-map-layout"><div id="route-map" class="route-map"></div><div class="map-stop-list"><small>{{ lang==='zh'?'当日顺路路线':'DAY ROUTE' }}</small><ol><li v-for="(point,i) in activeDayRoutePoints" :key="point.name+'-'+i"><b>{{ i+1 }}</b><span><strong>{{ point.name }}</strong><small>{{ point.time }} · {{ t(point.type) }}</small></span></li></ol><p><i data-lucide="info"></i>{{ lang==='zh'?'编号按游玩顺序排列；虚线表示建议串联顺序。':'Numbers follow visit order; the dashed line shows the suggested sequence.' }}</p></div></div>
           </template>
@@ -132,7 +133,7 @@
       <section id="inspiration" class="inspiration-section">
         <div class="section-head inspiration-head"><div><span class="kicker">{{ t('inspiration') }}</span><h2>{{ inspirationHeading }}</h2><p>{{ inspirationSub }}</p></div><button class="refresh-inspiration" @click="refreshInspiration"><i data-lucide="refresh-cw"></i>{{ lang==='zh'?'换一批灵感':'Refresh ideas' }}</button></div>
         <div class="destination-grid">
-          <article v-for="place in personalizedDestinations" :key="place.search" @click="exploreInspiration(place)"><div class="place-image" :style="{background: place.gradient}"><span>{{ place.emoji }}</span><button><i data-lucide="arrow-up-right"></i></button></div><div><small>{{ lang==='zh' ? place.tagZh : place.tagEn }}</small><h3>{{ lang==='zh' ? place.zh : place.en }}</h3><p>{{ lang==='zh' ? place.descZh : place.descEn }}</p><em class="recommend-reason"><i data-lucide="sparkles"></i>{{ lang==='zh'?place.reasonZh:place.reasonEn }}</em></div></article>
+          <article v-for="place in personalizedDestinations" :key="place.search" @click="exploreInspiration(place)"><div class="place-image photo-place-image"><img :src="inspirationImage(place.search)" :alt="lang==='zh'?place.zh:place.en" loading="lazy" decoding="async"><div class="place-photo-shade"></div><em>{{ lang==='zh'?place.tagZh:place.tagEn }}</em><button><i data-lucide="arrow-up-right"></i></button></div><div><small>{{ lang==='zh' ? place.tagZh : place.tagEn }}</small><h3>{{ lang==='zh' ? place.zh : place.en }}</h3><p>{{ lang==='zh' ? place.descZh : place.descEn }}</p><em class="recommend-reason"><i data-lucide="sparkles"></i>{{ lang==='zh'?place.reasonZh:place.reasonEn }}</em></div></article>
         </div>
       </section>
     </main>
@@ -206,6 +207,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="supabase-config.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=country-poi-1"></script>
+  <script src="app.js?v=demo-photos-1"></script>
 </body>
 </html>
