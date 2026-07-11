@@ -131,3 +131,26 @@ i[data-lucide="key-round"]::before,i[data-lucide="lock-keyhole"]::before { conte
 i[data-lucide="eye"]::before { content: '◉'; }
 i[data-lucide="eye-off"]::before { content: '⊘'; }
 i[data-lucide="circle-alert"]::before { content: '!'; font-weight: 900; }
+
+.hero-wallpapers { position: absolute; z-index: 0; inset: 0; overflow: hidden; background: #071712; }
+.hero-wallpaper { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; will-change: opacity,transform; }
+.hero-wallpaper.previous { z-index: 0; opacity: 1; transform: scale(1.08); }
+.hero-wallpaper.current { z-index: 1; animation: spotlight-in 8s ease-out forwards; }
+.hero .hero-shade { z-index: 1; background: linear-gradient(90deg,rgba(4,18,13,.9) 0%,rgba(4,18,13,.58) 41%,rgba(4,18,13,.08) 76%),linear-gradient(0deg,rgba(3,13,9,.55),transparent 42%); }
+@keyframes spotlight-in { 0% { opacity: 0; transform: scale(1.025); } 14% { opacity: 1; } 100% { opacity: 1; transform: scale(1.105); } }
+.spotlight-card { position: absolute; z-index: 4; right: 5vw; bottom: 34px; width: min(390px,32vw); padding: 15px 16px 12px; border: 1px solid rgba(255,255,255,.28); border-radius: 15px; background: rgba(12,29,22,.55); color: white; backdrop-filter: blur(18px) saturate(135%); box-shadow: 0 18px 50px rgba(0,0,0,.22); }
+.spotlight-location { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; }
+.spotlight-pin { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.14); color: #f1bc78; font-size: 19px; }
+.spotlight-location div { display: grid; min-width: 0; }
+.spotlight-location small { color: rgba(255,255,255,.58); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.spotlight-location strong { margin-top: 2px; font-family: 'Noto Serif SC',serif; font-size: 17px; }
+.spotlight-location p { overflow: hidden; margin: 2px 0 0; color: rgba(255,255,255,.68); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.spotlight-controls { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 10px; }
+.spotlight-controls > button { width: 27px; height: 27px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; background: rgba(255,255,255,.08); color: white; font-size: 20px; line-height: 1; }
+.spotlight-controls > button:hover { background: white; color: #163a2d; }
+.spotlight-controls > span { display: flex; align-items: center; gap: 5px; }
+.spotlight-controls > span button { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 8px; background: rgba(255,255,255,.35); transition: width .25s,background .25s; }
+.spotlight-controls > span button.active { width: 20px; background: #efb66f; }
+.hero .scroll-hint { display: none; }
+@media (max-width:900px) { .spotlight-card { width: auto; left: 5vw; right: 5vw; bottom: 18px; } .spotlight-location p { display:none; } }
+@media (prefers-reduced-motion:reduce) { .hero-wallpaper.current { animation: spotlight-fade 1s ease forwards; } @keyframes spotlight-fade { from { opacity:0; } to { opacity:1; } } }

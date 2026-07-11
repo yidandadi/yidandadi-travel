@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="weather-fix.css?v=2">
+  <link rel="stylesheet" href="weather-fix.css?v=spotlight-1">
 </head>
 <body>
   <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
@@ -37,7 +37,10 @@
 
     <main>
       <section class="hero">
-        <img src="assets/hero-travel.png" alt="山谷与湖泊旅行风景">
+        <div class="hero-wallpapers" aria-live="polite">
+          <img v-if="previousWallpaper!==null" class="hero-wallpaper previous" :src="wallpapers[previousWallpaper].src" alt="" aria-hidden="true">
+          <img class="hero-wallpaper current" :key="activeWallpaper" :src="wallpapers[activeWallpaper].src" :alt="lang==='zh' ? wallpapers[activeWallpaper].zh + '旅行风景' : wallpapers[activeWallpaper].en + ' travel landscape'">
+        </div>
         <div class="hero-shade"></div>
         <div class="hero-content">
           <div class="eyebrow"><i data-lucide="sparkles"></i>{{ t('eyebrow') }}</div>
@@ -64,6 +67,10 @@
           </div>
           <div class="popular"><span>{{ t('popular') }}</span><button v-for="city in quickCities" :key="city.id" @click="quickSearch(city)">{{ city.label[lang] }}</button></div>
         </div>
+        <aside class="spotlight-card">
+          <div class="spotlight-location"><span class="spotlight-pin">⌖</span><div><small>{{ lang==='zh' ? wallpapers[activeWallpaper].countryZh : wallpapers[activeWallpaper].countryEn }}</small><strong>{{ lang==='zh' ? wallpapers[activeWallpaper].zh : wallpapers[activeWallpaper].en }}</strong><p>{{ lang==='zh' ? wallpapers[activeWallpaper].descZh : wallpapers[activeWallpaper].descEn }}</p></div></div>
+          <div class="spotlight-controls"><button @click="changeWallpaper(-1)" :aria-label="lang==='zh'?'上一张壁纸':'Previous wallpaper'">‹</button><span><button v-for="(wallpaper,i) in wallpapers" :key="wallpaper.src" :class="{active:i===activeWallpaper}" @click="selectWallpaper(i)" :aria-label="`${i+1} / ${wallpapers.length}`"></button></span><button @click="changeWallpaper(1)" :aria-label="lang==='zh'?'下一张壁纸':'Next wallpaper'">›</button></div>
+        </aside>
         <div class="scroll-hint"><span>{{ t('scroll') }}</span><i data-lucide="arrow-down"></i></div>
       </section>
 
@@ -165,6 +172,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=auth-supabase-1"></script>
+  <script src="app.js?v=spotlight-1"></script>
 </body>
 </html>
