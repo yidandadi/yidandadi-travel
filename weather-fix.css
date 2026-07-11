@@ -288,3 +288,25 @@ i[data-lucide="circle-alert"]::before { content: '!'; font-weight: 900; }
   .interest-picker{align-items:flex-start;flex-direction:column}
   .search-box>button{min-width:100%}
 }
+
+/* Account gate and personalized inspiration */
+.auth-locked { height:100vh; overflow:hidden; }
+.auth-boot-gate { position:fixed; z-index:120; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#10281f; color:#fffdf8; }
+.auth-boot-gate > b { font-family:'Noto Serif SC'; font-size:24px; }
+.auth-boot-gate > small { color:rgba(255,255,255,.62); }
+.auth-gate-backdrop { z-index:100; padding:24px; overflow:auto; background:linear-gradient(90deg,rgba(5,20,15,.93),rgba(5,20,15,.56)),url('assets/spotlight-fuji.png') center/cover; }
+.auth-gate-backdrop .auth-modal { width:min(460px,94vw); max-height:94vh; overflow:auto; border:1px solid color-mix(in srgb,var(--paper) 70%,transparent); box-shadow:0 35px 100px rgba(0,0,0,.42); }
+.auth-gate-brand { display:flex; align-items:center; gap:12px; margin:-4px 0 18px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+.auth-gate-brand > div { display:flex; flex-direction:column; gap:2px; }
+.auth-gate-brand b { font-family:'Noto Serif SC'; font-size:16px; }
+.auth-gate-brand small { color:var(--muted); font-size:8px; letter-spacing:1.3px; }
+.inspiration-head { align-items:end; gap:24px; }
+.refresh-inspiration { flex:0 0 auto; display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:22px; padding:10px 15px; background:var(--paper); color:var(--green); font-size:11px; font-weight:800; }
+.refresh-inspiration:hover { border-color:var(--green); transform:translateY(-1px); }
+.refresh-inspiration svg { width:15px; }
+.recommend-reason { display:flex; align-items:flex-start; gap:6px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); color:var(--green); font-size:10px; font-style:normal; font-weight:700; line-height:1.45; }
+.recommend-reason svg { flex:0 0 auto; width:14px; margin-top:1px; color:var(--gold); }
+@media(max-width:600px){
+  .auth-gate-backdrop{padding:10px}.auth-gate-backdrop .auth-modal{max-height:96vh;padding:26px}
+  .inspiration-head{flex-direction:column}.refresh-inspiration{width:100%;justify-content:center}
+}
