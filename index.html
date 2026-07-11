@@ -19,11 +19,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="weather-fix.css?v=flow-1">
+  <link rel="stylesheet" href="weather-fix.css?v=auth-inspiration-1">
 </head>
 <body>
   <div id="boot-error" style="display:none;padding:24px;font-family:sans-serif;color:#8b1e1e"></div>
-  <div id="app" v-cloak :class="{ dark: darkMode }">
+  <div id="app" v-cloak :class="{ dark: darkMode, 'auth-locked': authGateActive }">
+    <div v-if="!authReady" class="auth-boot-gate"><span class="brand-mark"><i data-lucide="compass"></i></span><b>{{ t('brand') }}</b><span class="spinner"></span><small>{{ lang==='zh'?'正在安全连接账号服务…':'Connecting securely…' }}</small></div>
     <header class="nav" :class="{scrolled: scrolled}">
       <a class="brand" href="#" @click.prevent="goHome">
         <span class="brand-mark"><i data-lucide="compass"></i></span>
@@ -129,9 +130,9 @@
       </section>
 
       <section id="inspiration" class="inspiration-section">
-        <div class="section-head"><div><span class="kicker">{{ t('inspiration') }}</span><h2>{{ t('placesTitle') }}</h2><p>{{ t('placesSub') }}</p></div></div>
+        <div class="section-head inspiration-head"><div><span class="kicker">{{ t('inspiration') }}</span><h2>{{ inspirationHeading }}</h2><p>{{ inspirationSub }}</p></div><button class="refresh-inspiration" @click="refreshInspiration"><i data-lucide="refresh-cw"></i>{{ lang==='zh'?'换一批灵感':'Refresh ideas' }}</button></div>
         <div class="destination-grid">
-          <article v-for="place in destinations" @click="quickSearch(place.search)"><div class="place-image" :style="{background: place.gradient}"><span>{{ place.emoji }}</span><button><i data-lucide="arrow-up-right"></i></button></div><div><small>{{ lang==='zh' ? place.tagZh : place.tagEn }}</small><h3>{{ lang==='zh' ? place.zh : place.en }}</h3><p>{{ lang==='zh' ? place.descZh : place.descEn }}</p></div></article>
+          <article v-for="place in personalizedDestinations" :key="place.search" @click="exploreInspiration(place)"><div class="place-image" :style="{background: place.gradient}"><span>{{ place.emoji }}</span><button><i data-lucide="arrow-up-right"></i></button></div><div><small>{{ lang==='zh' ? place.tagZh : place.tagEn }}</small><h3>{{ lang==='zh' ? place.zh : place.en }}</h3><p>{{ lang==='zh' ? place.descZh : place.descEn }}</p><em class="recommend-reason"><i data-lucide="sparkles"></i>{{ lang==='zh'?place.reasonZh:place.reasonEn }}</em></div></article>
         </div>
       </section>
     </main>
@@ -159,9 +160,10 @@
     </transition>
 
     <transition name="modal">
-      <div v-if="showLogin" class="modal-backdrop" @click.self="showLogin=false">
+      <div v-if="showLogin || (!user && authReady)" class="modal-backdrop" :class="{'auth-gate-backdrop':!user}" @click.self="user && (showLogin=false)">
         <form class="login-modal auth-modal" @submit.prevent="submitAuth">
-          <button type="button" class="modal-close" @click="showLogin=false"><i data-lucide="x"></i></button>
+          <button v-if="user && authMode!=='update'" type="button" class="modal-close" @click="showLogin=false"><i data-lucide="x"></i></button>
+          <div v-if="!user" class="auth-gate-brand"><span class="brand-mark"><i data-lucide="compass"></i></span><div><b>{{ t('brand') }}</b><small>{{ lang==='zh'?'登录后开启你的私人旅行空间':'YOUR PRIVATE TRAVEL SPACE' }}</small></div></div>
           <span class="login-icon" :class="{success:authMode==='verify'}"><i :data-lucide="authMode==='verify' ? 'mail-check' : authMode==='update' ? 'key-round' : 'shield-check'"></i></span>
           <template v-if="authMode==='verify'">
             <h2>{{ lang==='zh' ? '检查你的邮箱' : 'Check your email' }}</h2>
@@ -204,6 +206,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="supabase-config.js"></script>
   <script>window.onerror=function(m,s,l){var e=document.getElementById('boot-error');e.style.display='block';e.textContent='启动错误：'+m+' ('+l+')'};</script>
-  <script src="app.js?v=bugfix-1"></script>
+  <script src="app.js?v=auth-inspiration-1"></script>
 </body>
 </html>
